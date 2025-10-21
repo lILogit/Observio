@@ -17,8 +17,7 @@ and 🐘 **PostgreSQL (JSONB storage)** for concurrent local persistence.
 - **PostgreSQL edition:** full ACID DB with concurrent readers/writers  
 - **Ideal for:** demos, edge nodes, developer laptops, or PoC pipelines  
 - **Architecture:** loosely coupled Python micro-services connected by a Redpanda event bus
-```
----
+
 
 ## 🧩 Architecture at a Glance
 
