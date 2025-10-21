@@ -1,6 +1,5 @@
 
 
-````markdown
 # ⚙️ EventOps Flow — Local Store MVP (PostgreSQL Edition)
 
 > **Collect → Normalize → Enrich → Store → Automate → Serve**
