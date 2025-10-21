@@ -1,0 +1,100 @@
+services:
+  broker:
+    image: redpandadata/redpanda:latest
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp=1
+      - --memory=1G
+      - --reserve-memory=0M
+      - --node-id=0
+      - --kafka-addr=0.0.0.0:9092
+      - --advertise-kafka-addr=broker:9092
+      - --rpc-addr=0.0.0.0:33145
+      - --advertise-rpc-addr=broker:33145
+      - --pandaproxy-addr=0.0.0.0:8082
+      - --advertise-pandaproxy-addr=broker:8082
+    ports:
+      - "9092:9092"
+      - "9644:9644"
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster info --brokers=broker:9092 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  normalizer:
+    build:
+      context: .
+      dockerfile: normalizer/Dockerfile
+    environment:
+      BROKERS: broker:9092
+      SCHEMA_URL: http://broker:8081
+      IN_TOPIC: ingest.raw.agent
+      OUT_TOPIC: signals.metric.v1
+    depends_on:
+      broker:
+        condition: service_healthy
+    volumes:
+      - data:/data
+
+  enricher:
+    build:
+      context: .
+      dockerfile: enricher/Dockerfile
+    environment:
+      BROKERS: broker:9092
+      IN_TOPIC: signals.metric.v1
+      OUT_TOPIC: signals.metric.v1
+    depends_on:
+      broker:
+        condition: service_healthy
+    volumes:
+      - data:/data
+
+  feature-rules:
+    build:
+      context: .
+      dockerfile: feature-rules/Dockerfile
+    environment:
+      BROKERS: broker:9092
+      IN_TOPIC: signals.metric.v1
+      OUT_TOPIC: ops.alert.v1
+      DATA_DIR: /data
+      DUCKDB_PATH: /data/metrics.duckdb
+    depends_on:
+      broker:
+        condition: service_healthy
+    volumes:
+      - data:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      BROKERS: broker:9092
+      ALERTS_TOPIC: ops.alert.v1
+      DATA_DIR: /data
+      DUCKDB_PATH: /data/metrics.duckdb
+      HOST: 0.0.0.0
+      PORT: 8088
+    ports:
+      - "8088:8088"
+    depends_on:
+      broker:
+        condition: service_healthy
+    volumes:
+      - data:/data
+
+  ui:
+    build: ./ui
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  data:

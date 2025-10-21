@@ -1,0 +1,62 @@
+{
+  "type": "record",
+  "name": "Envelope",
+  "namespace": "monitoring.v1",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string"
+    },
+    {
+      "name": "ts_event",
+      "type": "string"
+    },
+    {
+      "name": "ts_ingest",
+      "type": "string"
+    },
+    {
+      "name": "tenant_id",
+      "type": "string"
+    },
+    {
+      "name": "source",
+      "type": {
+        "type": "record",
+        "name": "Source",
+        "fields": [
+          {
+            "name": "type",
+            "type": "string"
+          },
+          {
+            "name": "source_id",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "schema_name",
+      "type": "string"
+    },
+    {
+      "name": "schema_version",
+      "type": "int"
+    },
+    {
+      "name": "attributes",
+      "type": {
+        "type": "map",
+        "values": "string"
+      }
+    },
+    {
+      "name": "tags",
+      "type": {
+        "type": "map",
+        "values": "string"
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>EventOps Flow – Local Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    body { font: 14px/1.4 system-ui, sans-serif; margin: 24px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    code, pre { background: #f6f6f6; padding: 4px 6px; border-radius: 6px; }
+    .row { display: flex; gap: 16px; }
+    .col { flex: 1; }
+  </style>
+</head>
+<body>
+  <h1>EventOps Flow – Local Store</h1>
+  <div class="row">
+    <div class="card col">
+      <h3>Latest CPU Metrics</h3>
+      <label>Tenant: <input id="tenant" value="acme"></label>
+      <label>Host: <input id="host" value="host-a"></label>
+      <button onclick="loadMetrics()">Load</button>
+      <pre id="metrics">[]</pre>
+    </div>
+    <div class="card col">
+      <h3>Live Alerts (SSE)</h3>
+      <button onclick="startSSE()">Connect</button>
+      <pre id="alerts"></pre>
+    </div>
+  </div>
+  <script>
+    async function loadMetrics() {
+      const t = document.getElementById('tenant').value;
+      const h = document.getElementById('host').value;
+      const res = await fetch(`http://localhost:8088/metrics/cpu?tenant=${encodeURIComponent(t)}&host=${encodeURIComponent(h)}`);
+      document.getElementById('metrics').textContent = JSON.stringify(await res.json(), null, 2);
+    }
+    function startSSE() {
+      const es = new EventSource('http://localhost:8088/alerts/stream');
+      const out = document.getElementById('alerts');
+      es.onmessage = (e) => { out.textContent += e.data + "\n"; };
+      es.onerror = () => { out.textContent += "❌ SSE error\n"; es.close(); };
+    }
+  </script>
+</body>
+</html>
