@@ -21,7 +21,7 @@ This **Local Store Edition** replaces remote DBs with **DuckDB + Parquet** files
 ```mermaid
 flowchart LR
   subgraph Ingest
-    Agent["Agents (Prom/OTel/Beats)"]
+    Agent["Events"]
   end
 
   subgraph Core["Event Core"]
@@ -37,7 +37,7 @@ flowchart LR
   end
 
   subgraph Storage
-    LS[(Local Store DuckDB + Parquet)]
+    LS[(Store)]
   end
 
   subgraph Serve["Serve & UI"]
