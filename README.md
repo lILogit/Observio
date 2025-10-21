@@ -37,7 +37,7 @@ flowchart LR
   end
 
   subgraph Storage
-    LS[(Store)]
+    LS[(Local database)]
   end
 
   subgraph Serve["Serve & UI"]
