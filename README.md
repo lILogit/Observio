@@ -1,6 +1,6 @@
 
 
-# ⚙️ EventOps Flow — Local Store MVP (PostgreSQL Edition)
+# ⚙️ EventOps MVP framework
 
 > **Collect → Normalize → Enrich → Store → Automate → Serve**
 
