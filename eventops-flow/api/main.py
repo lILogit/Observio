@@ -1,42 +1,51 @@
+# api/main.py
 import os
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
-import duckdb
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from common.kafka_io import make_consumer
 
-DUCKDB_PATH = os.getenv("DUCKDB_PATH", "/data/metrics.duckdb")
+PG = dict(
+    dbname=os.getenv("PG_DB","eventops"),
+    user=os.getenv("PG_USER","eventops"),
+    password=os.getenv("PG_PASS","secret"),
+    host=os.getenv("PG_HOST","postgres"),
+    port=int(os.getenv("PG_PORT","5432")),
+)
 ALERTS_TOPIC = os.getenv("ALERTS_TOPIC", "ops.alert.v1")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8088"))
 
-app = FastAPI(title="EventOps API")
+app = FastAPI(title="EventOps API (Postgres)")
 
 def q(sql: str, params=()):
-    con = duckdb.connect(DUCKDB_PATH, read_only=True)
-    res = con.execute(sql, params).fetchall()
-    cols = [d[0] for d in con.description]
+    con = psycopg2.connect(**PG)
+    cur = con.cursor(cursor_factory=RealDictCursor)
+    cur.execute(sql, params)
+    rows = cur.fetchall()
     con.close()
-    return [dict(zip(cols, r)) for r in res]
+    return rows
 
 @app.get("/metrics/cpu")
 def cpu_metrics(tenant: str, host: str):
-    rows = q("""
+    return q("""
         SELECT ts, value, unit, tags
         FROM metrics
-        WHERE tenant=? AND source_id=? AND metric='cpu_load'
-        ORDER BY ts DESC LIMIT 1000
+        WHERE tenant=%s AND source_id=%s AND metric='cpu_load'
+        ORDER BY ts DESC
+        LIMIT 1000
     """, (tenant, host))
-    return rows
 
 @app.get("/metrics/latest")
 def latest(tenant: str, metric: str):
-    rows = q("""
+    return q("""
         SELECT ts, tenant, source_id, metric, value, unit, tags
         FROM metrics
-        WHERE tenant=? AND metric=?
-        ORDER BY ts DESC LIMIT 50
+        WHERE tenant=%s AND metric=%s
+        ORDER BY ts DESC
+        LIMIT 50
     """, (tenant, metric))
-    return rows
 
 @app.get("/alerts/stream")
 def alerts_stream():
@@ -45,12 +54,8 @@ def alerts_stream():
         try:
             while True:
                 msg = consumer.poll(1.0)
-                if msg is None:
-                    continue
-                if msg.error():
-                    continue
-                payload = msg.value().decode("utf-8")
-                yield f"data: {payload}\n\n"
+                if msg and not msg.error():
+                    yield f"data: {msg.value().decode('utf-8')}\\n\\n"
         finally:
             consumer.close()
     return StreamingResponse(gen(), media_type="text/event-stream")
@@ -58,3 +63,4 @@ def alerts_stream():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host=HOST, port=PORT)
+
