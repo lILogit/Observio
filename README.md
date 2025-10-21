@@ -1,5 +1,5 @@
 
-# ⚙️ EventOps Flow — Local Store Edition
+# ⚙️ MVP - EventOps Flow — Local Store Edition
 
 **Collect → Normalize → Enrich → Store → Automate → Process → Serve**
 
