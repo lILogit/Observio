@@ -1,5 +1,5 @@
 
-# ⚙️ MVP (Minimum Value Product) - EventOps Flow
+# ⚙️ MVP (Minimum Value Product) - EventOps Flow Demo
 
 **Collect → Normalize → Enrich → Store → Automate → Process → Serve**
 
