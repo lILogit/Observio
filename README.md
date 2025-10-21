@@ -10,7 +10,6 @@ A minimal **event-driven observability pipeline** built with
 🦄 **Redpanda (broker + schema registry)**, 🐍 **Python micro-services**,  
 and 🐘 **PostgreSQL (JSONB storage)** for concurrent local persistence.
 
----
 
 ## 🧭 Overview
 
