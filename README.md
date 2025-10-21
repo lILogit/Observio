@@ -1,22 +1,21 @@
+Perfect. Below is the **updated, GitHub-ready `README.md`** for your project — the **EventOps Flow (Local Store Edition)**, integrating the **DuckDB + Parquet** local storage layer and streamlining the quick-start instructions for clarity and portability.
 
-# ⚙️ EventOps Flow — MVP Architecture
+---
+
+# ⚙️ EventOps Flow — Local Store Edition
 
 **Collect → Normalize → Enrich → Store → Automate → Process → Serve**
 
-> A minimal, event-driven backbone to turn telemetry into intelligent, automated signals.
+> A minimal, event-driven pipeline turning raw telemetry into intelligent actions —
+> no external database, just lightweight local storage powered by **DuckDB + Parquet**.
 
 ---
 
 ## 🧭 Overview
 
-**EventOps Flow** is a modular **EventOps / DataOps** framework that unifies data ingestion, normalization, enrichment, automation, and serving.
-This MVP edition is intentionally small — a **seven-component stack** that you can spin up locally, extend with your own logic, and evolve into a production event pipeline.
+**EventOps Flow** is a modular **EventOps / DataOps** framework that connects data ingestion, normalization, enrichment, and automation into a single developer-friendly pipeline.
 
-### 🔁 Dataflow lifecycle
-
-```
-Collect → Normalize → Enrich → Store (ClickHouse) → Automate (Rules) → Process → Expose (API/UI)
-```
+This **Local Store Edition** replaces remote DBs with **DuckDB + Parquet** files for fast analytics and zero-config persistence — ideal for prototyping, local testing, or edge deployments.
 
 ---
 
@@ -37,24 +36,24 @@ flowchart LR
   subgraph Stream["Stream Apps"]
     Norm[Normalizer]
     Enr[Enricher]
-    Feat[Feature+Rules]
+    Feat[Feature + Rules]
   end
 
   subgraph Storage
-    CH[(ClickHouse)]
+    LS[(Local Store DuckDB + Parquet)]
   end
 
   subgraph Serve["Serve & UI"]
     API[API Gateway]
-    UI[UI/Grafana-lite]
+    UI[UI / Grafana-lite]
   end
 
   Agent --> Bus
   Bus --> Norm --> Bus
   Bus --> Enr --> Bus
   Bus --> Feat --> Bus
-  Bus --> CH
-  API --> CH
+  Bus --> LS
+  API --> LS
   API --> Bus
   Bus --> UI
   UI --> API
@@ -64,39 +63,43 @@ flowchart LR
 
 ## 🧩 Core Components
 
-| Service             | Purpose                               | Example Tech               |
-| ------------------- | ------------------------------------- | -------------------------- |
-| **broker**          | Event transport layer                 | Redpanda / Kafka           |
-| **schema-registry** | Avro contracts and validation         | Redpanda Schema Registry   |
-| **normalizer**      | Cleans and standardizes incoming data | Python + confluent-kafka   |
-| **enricher**        | Adds metadata / context               | Python microservice        |
-| **feature-rules**   | Detects conditions, creates alerts    | Python + ClickHouse client |
-| **clickhouse**      | Fast analytical storage               | ClickHouse Server          |
-| **api**             | Query metrics + stream alerts         | FastAPI                    |
-| **ui**              | Simple web frontend / Grafana         | HTML/JS or Grafana-Lite    |
+| Service             | Purpose                     | Technology               |
+| ------------------- | --------------------------- | ------------------------ |
+| **broker**          | Event transport             | Redpanda / Kafka         |
+| **schema-registry** | Schema validation           | Redpanda Registry        |
+| **normalizer**      | Cleans & standardizes input | Python + confluent-kafka |
+| **enricher**        | Adds context (CMDB, tags)   | Python                   |
+| **feature-rules**   | Generates alerts            | Python                   |
+| **local store**     | File-based analytics        | DuckDB + Parquet         |
+| **api**             | Query + SSE alerts          | FastAPI + DuckDB         |
+| **ui**              | Minimal web or Grafana view | HTML / JS                |
 
 ---
 
 ## 🧱 Topics and Schemas
 
-| Topic               | Purpose                      | Retention | Notes           |
-| ------------------- | ---------------------------- | --------- | --------------- |
-| `ingest.raw.agent`  | Raw metrics/logs from agents | 3 days    | Input topic     |
-| `signals.metric.v1` | Normalized metrics           | 14 days   | No compaction   |
-| `ops.alert.v1`      | Rule-based alerts            | 30 days   | Compaction = on |
+| Topic               | Purpose             | Retention | Notes         |
+| ------------------- | ------------------- | --------- | ------------- |
+| `ingest.raw.agent`  | Raw agent telemetry | 3 d       | Input         |
+| `signals.metric.v1` | Normalized metrics  | 14 d      | No compaction |
+| `ops.alert.v1`      | Rule-based alerts   | 30 d      | Compaction on |
 
-**Envelope Schema (`monitoring.envelope.v1`)**
+**Envelope Schema (`monitoring.envelope.v1`):**
 
 ```json
 {
-  "type":"record","name":"Envelope","namespace":"monitoring.v1",
-  "fields":[
+  "type": "record",
+  "name": "Envelope",
+  "namespace": "monitoring.v1",
+  "fields": [
     {"name":"event_id","type":"string"},
     {"name":"ts_event","type":"string"},
     {"name":"ts_ingest","type":"string"},
     {"name":"tenant_id","type":"string"},
-    {"name":"source", "type":{"type":"record","name":"Source",
-      "fields":[{"name":"type","type":"string"},{"name":"source_id","type":"string"}]}},
+    {"name":"source","type":{
+      "type":"record","name":"Source",
+      "fields":[{"name":"type","type":"string"},{"name":"source_id","type":"string"}]
+    }},
     {"name":"schema_name","type":"string"},
     {"name":"schema_version","type":"int"},
     {"name":"attributes","type":{"type":"map","values":"string"}},
@@ -127,33 +130,33 @@ services:
       SCHEMA_REGISTRY_KAFKA_BROKERS: broker:9092
     ports: ["8081:8081"]
 
-  clickhouse:
-    image: clickhouse/clickhouse-server:24
-    ports: ["8123:8123","9000:9000"]
-    volumes: ["ch_data:/var/lib/clickhouse"]
-
   normalizer:
     build: ./normalizer
     environment: { BROKERS: broker:9092, SCHEMA_URL: http://schema-registry:8081 }
     depends_on: [broker, schema-registry]
+    volumes: ["data:/data"]
 
   enricher:
     build: ./enricher
     environment: { BROKERS: broker:9092 }
     depends_on: [broker]
+    volumes: ["data:/data"]
 
   feature-rules:
     build: ./feature-rules
     environment: { BROKERS: broker:9092 }
     depends_on: [broker]
+    volumes: ["data:/data"]
 
   api:
     build: ./api
     environment:
-      CLICKHOUSE_URL: http://clickhouse:8123
       BROKERS: broker:9092
+      DATA_DIR: /data
+      DUCKDB_PATH: /data/metrics.duckdb
     ports: ["8088:8088"]
-    depends_on: [clickhouse, broker]
+    depends_on: [broker]
+    volumes: ["data:/data"]
 
   ui:
     build: ./ui
@@ -161,81 +164,102 @@ services:
     depends_on: [api]
 
 volumes:
-  ch_data:
+  data:
 ```
 
-> Swap Redpanda for Kafka if preferred — all contracts remain compatible.
+---
+
+## 🗃️ Local Store Layout
+
+```
+/data/
+  metrics.duckdb
+  parquet/
+    tenant=acme/metric=cpu_load/date=2025-10-16/part-0001.parquet
+```
 
 ---
 
 ## 🧪 Quick Start
 
 ```bash
-# Clone repository
+# 1️⃣  Clone and launch
 git clone https://github.com/<yourname>/eventops-flow.git
 cd eventops-flow
-
-# Build and run MVP stack
 docker compose up -d
 
-# Simulate agent metric
+# 2️⃣  Simulate agent metric
 kcat -b localhost:9092 -t ingest.raw.agent -P <<EOF
 {"tenant_id":"acme","host":"host-a","metric":"cpu_load","value":92,
  "ts_event":"2025-10-16T09:00:00Z","unit":"percent","tags":{"env":"prod"}}
 EOF
 
-# Query metrics
+# 3️⃣  Query metrics
 curl "http://localhost:8088/metrics/cpu?tenant=acme&host=host-a"
 
-# Watch alerts (Server-Sent Events)
+# 4️⃣  Watch live alerts
 curl -N http://localhost:8088/alerts/stream
 ```
 
 ---
 
-## 🧠 Why This MVP Works
+## 🧰 Inspect Local Data
 
-* **Minimal moving parts** — one broker, one registry, three microservices, one store, one API.
-* **Contract-first design** — Avro envelope ensures forward-compatible schemas.
-* **Fully replayable** — rebuild state by replaying topics into ClickHouse.
-* **Scalable path** — swap microservices for Flink, ksqlDB, or Temporal as needed.
-* **Composable** — add OpenSearch, Neo4j, or Qdrant downstream without schema change.
+```bash
+# open DuckDB shell
+duckdb data/metrics.duckdb "SELECT COUNT(*) FROM metrics;"
+# export sample
+duckdb data/metrics.duckdb "COPY (SELECT * FROM metrics LIMIT 100) TO 'sample.parquet' (FORMAT PARQUET);"
+```
 
 ---
 
-## 🧰 Repository Layout
+## 🔄 Extend / Migrate
+
+* Add new topics (`signals.log.v1`, `signals.trace.v1`)
+* Swap local sink for ClickHouse, PostgreSQL, or Qdrant later
+* Keep envelope schema intact for contract-first evolution
+* Plug in n8n / Flink / Temporal for richer automation
+
+---
+
+## 📦 Repository Layout
 
 ```
 eventops-flow/
-├── normalizer/         # cleans and standardizes agent events
-├── enricher/           # adds context/CMDB data
-├── feature-rules/      # computes features, triggers alerts
-├── api/                # FastAPI service exposing queries + alerts stream
-├── ui/                 # minimal web or Grafana-lite UI
+├── normalizer/
+├── enricher/
+├── feature-rules/
+│   └── local_sink.py
+├── api/
+├── ui/
 ├── docker-compose.yml
 └── README.md
 ```
 
 ---
 
-## 🔮 Next Steps
+## ✅ Why Local Store
 
-* Add `signals.log.v1` and `signals.trace.v1` for observability logs/traces
-* Separate `signals.enriched.v1` for richer joins
-* Introduce `ctrl.command.v1` for closed-loop automation
-* Implement multi-tenant ACLs and per-tenant retention
-* Plug in Flink, n8n, or Temporal for advanced automation
+* 🧩 Zero external dependencies
+* ⚡ Fast analytical queries (vectorized engine)
+* 📂 Portable & human-readable files
+* 🔒 Perfect for laptops, edge nodes, or demos
 
 ---
 
 ## 📜 License
 
-MIT License — free for use, modification, and extension.
+MIT License — Free for use, modification, and extension.
 
 ---
 
 ## ✨ Vision
 
-> Build once, extend infinitely.
-> **EventOps Flow** turns streams into structure, structure into insight, and insight into automated action.
+> **EventOps Flow** bridges raw data and intelligent automation.
+> From lightweight local demos to enterprise data fabrics,
+> the same pattern scales — **one envelope, one event bus, infinite possibilities.**
 
+---
+
+Would you like me to now generate the **micro-service templates** (`Dockerfile`, `requirements.txt`, and minimal Python entrypoints) that match this README so you can `git push` a fully runnable repo?
