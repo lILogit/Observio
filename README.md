@@ -1,6 +1,4 @@
 ---
-
-````markdown
 # ⚙️ EventOps Flow — Local Store MVP
 
 > **Collect → Normalize → Enrich → Store → Automate → Serve**
