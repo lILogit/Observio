@@ -1,3 +1,10 @@
+#Verify services are up
+
+Expected running services:
+broker, topics-init {one/off], postgres, normalizer, enricher, feature-rules, api, ui
+
+
+List topics
 
 docker exec -it $(docker ps -qf name=broker) \
   rpk topic list --brokers=broker:9092
