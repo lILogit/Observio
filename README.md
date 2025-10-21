@@ -1,191 +1,248 @@
-# MVP-EventOps-Framework
-
-Perfect. Here’s a **complete, production-ready `README.md`** draft for your GitHub repository — based on your framework idea:
-
----
-
-# 🧠 EventOps Flow
-
-**From Data to Action — A Modular Event-Driven Framework**
+Excellent — you’ve essentially described a **ready-to-launch event-driven observability and automation framework**.
+Here’s a **refined `README.md`** for the GitHub repository that merges your MVP architecture, seven-step plan, and technical snippets into a clear, professional project presentation 👇
 
 ---
 
-## 🚀 Overview
+# ⚙️ EventOps Flow — MVP Architecture
 
-**EventOps Flow** is a modular, event-driven framework designed to transform **raw data** into **actionable intelligence**.
-It follows a clear and extensible lifecycle:
+**Collect → Normalize → Enrich → Store → Automate → Process → Serve**
 
-> **Collect → Normalize → Enrich → Store → Automate → Process → Expose (API) → Distribute (Event Bus)**
-
-Built for **real-time systems**, **AI-powered data pipelines**, and **automation backbones**, EventOps Flow bridges the gap between *data operations (DataOps)*, *event streaming (EDA)*, and *intelligent automation (MLOps/AI-Ops)*.
+> A minimal, event-driven backbone to turn telemetry into intelligent, automated signals.
 
 ---
 
-## 🧩 Core Principles
+## 🧭 Overview
 
-| Stage                      | Purpose                            | Example Tools                             |
-| -------------------------- | ---------------------------------- | ----------------------------------------- |
-| **Collect**                | Ingest data from multiple sources  | MQTT, Kafka Connect, REST, Webhooks       |
-| **Normalize**              | Standardize schemas and structures | FastAPI, Pydantic, Avro, JSON Schema      |
-| **Enrich**                 | Add metadata, context, embeddings  | Python microservices, LLMs, external APIs |
-| **Store (Sink)**           | Persist enriched data              | ClickHouse, PostgreSQL, Qdrant, MinIO     |
-| **Automate**               | Trigger workflows, alerts, actions | n8n, Temporal, Apache Airflow             |
-| **Process**                | Run analytics, transformations, ML | Flink, Spark, LangChain agents            |
-| **Expose (API)**           | Provide query / serve endpoints    | FastAPI, GraphQL, gRPC                    |
-| **Distribute (Event Bus)** | Deliver to subscribers             | Pulsar, Kafka, Redis Streams              |
+**EventOps Flow** is a modular **EventOps / DataOps** framework that unifies data ingestion, normalization, enrichment, automation, and serving.
+This MVP edition is intentionally small — a **seven-component stack** that you can spin up locally, extend with your own logic, and evolve into a production event pipeline.
+
+### 🔁 Dataflow lifecycle
+
+```
+Collect → Normalize → Enrich → Store (ClickHouse) → Automate (Rules) → Process → Expose (API/UI)
+```
 
 ---
 
-## 🧠 Architecture
+## 📊 Architecture at a Glance
 
 ```mermaid
 flowchart LR
-    A[Collect] --> B[Normalize]
-    B --> C[Enrich]
-    C --> D[Store]
-    D --> E[Automate]
-    E --> F[Process]
-    F --> G[API / Serve]
-    G --> H[Event Bus]
+  subgraph Ingest
+    Agent["Agents (Prom/OTel/Beats)"]
+  end
 
-    subgraph Infra["Core Infrastructure"]
-        H ---|Pub/Sub| A
-        D -.->|Data Lake / DB| F
-    end
+  subgraph Core["Event Core"]
+    Bus[(Broker)]
+    Reg[(Schema Registry)]
+    Reg --> Bus
+  end
+
+  subgraph Stream["Stream Apps"]
+    Norm[Normalizer]
+    Enr[Enricher]
+    Feat[Feature+Rules]
+  end
+
+  subgraph Storage
+    CH[(ClickHouse)]
+  end
+
+  subgraph Serve["Serve & UI"]
+    API[API Gateway]
+    UI[UI/Grafana-lite]
+  end
+
+  Agent --> Bus
+  Bus --> Norm --> Bus
+  Bus --> Enr --> Bus
+  Bus --> Feat --> Bus
+  Bus --> CH
+  API --> CH
+  API --> Bus
+  Bus --> UI
+  UI --> API
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## 🧩 Core Components
 
-| Layer          | Example Technology                |
-| -------------- | --------------------------------- |
-| **Messaging**  | Apache Pulsar / Kafka             |
-| **Storage**    | ClickHouse, PostgreSQL, Qdrant    |
-| **Processing** | Python, FastAPI, LangChain, Flink |
-| **Automation** | n8n, Temporal, Celery             |
-| **Monitoring** | Prometheus, Grafana               |
-| **Deployment** | Docker Compose / Kubernetes       |
-
----
-
-## 💡 Use Cases
-
-* **IoT Telemetry Processing** – normalize sensor data, enrich with context, and trigger alerts.
-* **Knowledge Graph Enrichment** – collect documents, embed, and store in vector DB.
-* **Security Automation** – detect anomalies and initiate automated response workflows.
-* **Business Intelligence** – turn streaming data into dashboards and automated reports.
-* **AI Agent Backends** – feed structured event streams to decision-making LLMs.
+| Service             | Purpose                               | Example Tech               |
+| ------------------- | ------------------------------------- | -------------------------- |
+| **broker**          | Event transport layer                 | Redpanda / Kafka           |
+| **schema-registry** | Avro contracts and validation         | Redpanda Schema Registry   |
+| **normalizer**      | Cleans and standardizes incoming data | Python + confluent-kafka   |
+| **enricher**        | Adds metadata / context               | Python microservice        |
+| **feature-rules**   | Detects conditions, creates alerts    | Python + ClickHouse client |
+| **clickhouse**      | Fast analytical storage               | ClickHouse Server          |
+| **api**             | Query metrics + stream alerts         | FastAPI                    |
+| **ui**              | Simple web frontend / Grafana         | HTML/JS or Grafana-Lite    |
 
 ---
 
-## 📦 Repository Structure
+## 🧱 Topics and Schemas
+
+| Topic               | Purpose                      | Retention | Notes           |
+| ------------------- | ---------------------------- | --------- | --------------- |
+| `ingest.raw.agent`  | Raw metrics/logs from agents | 3 days    | Input topic     |
+| `signals.metric.v1` | Normalized metrics           | 14 days   | No compaction   |
+| `ops.alert.v1`      | Rule-based alerts            | 30 days   | Compaction = on |
+
+**Envelope Schema (`monitoring.envelope.v1`)**
+
+```json
+{
+  "type":"record","name":"Envelope","namespace":"monitoring.v1",
+  "fields":[
+    {"name":"event_id","type":"string"},
+    {"name":"ts_event","type":"string"},
+    {"name":"ts_ingest","type":"string"},
+    {"name":"tenant_id","type":"string"},
+    {"name":"source", "type":{"type":"record","name":"Source",
+      "fields":[{"name":"type","type":"string"},{"name":"source_id","type":"string"}]}},
+    {"name":"schema_name","type":"string"},
+    {"name":"schema_version","type":"int"},
+    {"name":"attributes","type":{"type":"map","values":"string"}},
+    {"name":"tags","type":{"type":"map","values":"string"}}
+  ]
+}
+```
+
+---
+
+## 🐳 Docker Compose (MVP Core)
+
+```yaml
+version: "3.9"
+services:
+  broker:
+    image: redpandadata/redpanda:latest
+    command: ["redpanda","start","--overprovisioned","--smp","1","--memory","1G",
+              "--reserve-memory","0M","--node-id","0",
+              "--kafka-addr","0.0.0.0:9092","--advertise-kafka-addr","broker:9092",
+              "--rpc-addr","0.0.0.0:33145","--advertise-rpc-addr","broker:33145",
+              "--pandaproxy-addr","0.0.0.0:8082","--advertise-pandaproxy-addr","broker:8082"]
+    ports: ["9092:9092","9644:9644","8081:8081","8082:8082"]
+
+  schema-registry:
+    image: docker.redpanda.com/vectorized/redpanda-schema-registry:latest
+    environment:
+      SCHEMA_REGISTRY_KAFKA_BROKERS: broker:9092
+    ports: ["8081:8081"]
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24
+    ports: ["8123:8123","9000:9000"]
+    volumes: ["ch_data:/var/lib/clickhouse"]
+
+  normalizer:
+    build: ./normalizer
+    environment: { BROKERS: broker:9092, SCHEMA_URL: http://schema-registry:8081 }
+    depends_on: [broker, schema-registry]
+
+  enricher:
+    build: ./enricher
+    environment: { BROKERS: broker:9092 }
+    depends_on: [broker]
+
+  feature-rules:
+    build: ./feature-rules
+    environment: { BROKERS: broker:9092 }
+    depends_on: [broker]
+
+  api:
+    build: ./api
+    environment:
+      CLICKHOUSE_URL: http://clickhouse:8123
+      BROKERS: broker:9092
+    ports: ["8088:8088"]
+    depends_on: [clickhouse, broker]
+
+  ui:
+    build: ./ui
+    ports: ["8080:80"]
+    depends_on: [api]
+
+volumes:
+  ch_data:
+```
+
+> Swap Redpanda for Kafka if preferred — all contracts remain compatible.
+
+---
+
+## 🧪 Quick Start
+
+```bash
+# Clone repository
+git clone https://github.com/<yourname>/eventops-flow.git
+cd eventops-flow
+
+# Build and run MVP stack
+docker compose up -d
+
+# Simulate agent metric
+kcat -b localhost:9092 -t ingest.raw.agent -P <<EOF
+{"tenant_id":"acme","host":"host-a","metric":"cpu_load","value":92,
+ "ts_event":"2025-10-16T09:00:00Z","unit":"percent","tags":{"env":"prod"}}
+EOF
+
+# Query metrics
+curl "http://localhost:8088/metrics/cpu?tenant=acme&host=host-a"
+
+# Watch alerts (Server-Sent Events)
+curl -N http://localhost:8088/alerts/stream
+```
+
+---
+
+## 🧠 Why This MVP Works
+
+* **Minimal moving parts** — one broker, one registry, three microservices, one store, one API.
+* **Contract-first design** — Avro envelope ensures forward-compatible schemas.
+* **Fully replayable** — rebuild state by replaying topics into ClickHouse.
+* **Scalable path** — swap microservices for Flink, ksqlDB, or Temporal as needed.
+* **Composable** — add OpenSearch, Neo4j, or Qdrant downstream without schema change.
+
+---
+
+## 🧰 Repository Layout
 
 ```
 eventops-flow/
-├── services/
-│   ├── collector/          # Data ingestion endpoints
-│   ├── normalizer/         # Schema & format normalization
-│   ├── enricher/           # Adds metadata or embeddings
-│   ├── sink/               # Writes to ClickHouse/Qdrant
-│   ├── processor/          # Rules / analytics / ML
-│   ├── automation/         # n8n / Temporal tasks
-│   ├── api/                # REST / GraphQL endpoints
-│   └── bus/                # Event message broker
+├── normalizer/         # cleans and standardizes agent events
+├── enricher/           # adds context/CMDB data
+├── feature-rules/      # computes features, triggers alerts
+├── api/                # FastAPI service exposing queries + alerts stream
+├── ui/                 # minimal web or Grafana-lite UI
 ├── docker-compose.yml
-├── .env.example
-├── Makefile
 └── README.md
 ```
 
 ---
 
-## ⚙️ Quick Start
+## 🔮 Next Steps
 
-```bash
-# Clone the repository
-git clone https://github.com/<yourname>/eventops-flow.git
-cd eventops-flow
-
-# Spin up the full stack
-docker compose up -d
-
-# Access the API
-http://localhost:8080/docs
-```
-
----
-
-## 🌍 Example Workflow
-
-1. **Collect:** MQTT sensor publishes `temperature: 32°C`
-2. **Normalize:** Converted to `{ "sensor": "A1", "temp_c": 32.0, "timestamp": ... }`
-3. **Enrich:** Add metadata `{ "location": "Greenhouse 3", "risk": "High" }`
-4. **Store:** Save record to ClickHouse and vector store (Qdrant)
-5. **Automate:** Trigger workflow → send alert → adjust cooling system
-6. **Expose:** API returns aggregated stats
-7. **Distribute:** Event bus pushes updates to dashboards
-
----
-
-## 🧰 Extending the Framework
-
-Add a new component under `/services` and register it in the event topology:
-
-```python
-# Example: register new enrichment service
-@event_bus.subscribe("normalize.output")
-def enrich_message(event):
-    enriched = enrich(event)
-    event_bus.publish("enrich.output", enriched)
-```
-
----
-
-## 🧪 Development Mode
-
-```bash
-# Lint & format
-make lint
-
-# Run tests
-pytest -v
-
-# View logs
-docker compose logs -f
-```
-
----
-
-## 📊 Observability
-
-* **Prometheus metrics** exposed on `:9090`
-* **Grafana dashboards** available at `:3000`
-* **Structured logs** with correlation IDs per event
-
----
-
-## 🔗 Related Concepts
-
-* [DataOps](https://en.wikipedia.org/wiki/DataOps)
-* [Event-Driven Architecture (EDA)](https://martinfowler.com/articles/201701-event-driven.html)
-* [Streaming Data Pipelines](https://kafka.apache.org/documentation/streams/)
-* [KnowledgeOps & Cognitive Automation](https://research.ibm.com/publications/cognitive-automation)
+* Add `signals.log.v1` and `signals.trace.v1` for observability logs/traces
+* Separate `signals.enriched.v1` for richer joins
+* Introduce `ctrl.command.v1` for closed-loop automation
+* Implement multi-tenant ACLs and per-tenant retention
+* Plug in Flink, n8n, or Temporal for advanced automation
 
 ---
 
 ## 📜 License
 
-MIT License — free to use, modify, and extend.
-Contributions and pull requests are welcome!
+MIT License — free for use, modification, and extension.
 
 ---
 
 ## ✨ Vision
 
-> **EventOps Flow** aims to be a universal backbone for **intelligent, event-driven data automation**, bridging the gap between raw telemetry, contextual knowledge, and automated reasoning.
+> Build once, extend infinitely.
+> **EventOps Flow** turns streams into structure, structure into insight, and insight into automated action.
 
 ---
 
-Would you like me to generate the **matching `docker-compose.yml` skeleton** and folder layout for this README (so you can push it as a starter repo)?
-
+Would you like me to generate the **companion folder structure** (with `Dockerfile`, `requirements.txt`, and entrypoint for each microservice) so this README can serve as a push-ready starter repo?
