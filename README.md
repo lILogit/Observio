@@ -1,18 +1,22 @@
 
 ---
 
-# ⚙️ EventOps Flow — Local Store MVP
+````markdown
+# ⚙️ EventOps Flow — Local Store MVP (PostgreSQL Edition)
 
 > **Collect → Normalize → Enrich → Store → Automate → Serve**
 
 A minimal **event-driven observability pipeline** built with  
-🦄 **Redpanda**, 🐍 **Python micro-services**, and 🪶 **DuckDB + Parquet** for local persistence.
+🦄 **Redpanda (broker + schema registry)**, 🐍 **Python micro-services**,  
+and 🐘 **PostgreSQL (JSONB storage)** for concurrent local persistence.
+
+---
 
 ## 🧭 Overview
 
 **EventOps Flow** demonstrates how to transform raw telemetry into intelligent actions using lightweight, modular services.
 
-- **Local-store edition:** zero external DB, instant analytics via DuckDB  
+- **PostgreSQL edition:** full ACID DB with concurrent readers/writers  
 - **Ideal for:** demos, edge nodes, developer laptops, or PoC pipelines  
 - **Architecture:** loosely coupled Python micro-services connected by a Redpanda event bus
 
@@ -27,9 +31,7 @@ flowchart LR
   end
 
   subgraph Core["Event Core"]
-    Bus[(Redpanda Broker)]
-    Reg[(Schema Registry built-in)]
-    Reg --> Bus
+    Bus[(Redpanda Broker + Schema Registry)]
   end
 
   subgraph Stream["Stream Apps"]
@@ -39,7 +41,7 @@ flowchart LR
   end
 
   subgraph Storage
-    LS[(DuckDB + Parquet)]
+    PG[(PostgreSQL JSONB Store)]
   end
 
   subgraph Serve["Serve / UI"]
@@ -51,8 +53,8 @@ flowchart LR
   Bus --> Norm --> Bus
   Bus --> Enr --> Bus
   Bus --> Feat --> Bus
-  Bus --> LS
-  API --> LS
+  Bus --> PG
+  API --> PG
   API --> Bus
   Bus --> UI
   UI --> API
@@ -60,94 +62,97 @@ flowchart LR
 
 ---
 
-## 📦 Components
+## 📦 Core Components
 
 | Service           | Purpose                           | Stack / Tech             |
 | ----------------- | --------------------------------- | ------------------------ |
 | **broker**        | Event transport + schema registry | 🦄 Redpanda (latest)     |
+| **topics-init**   | Pre-creates Kafka topics          | Redpanda CLI (`rpk`)     |
 | **normalizer**    | Clean & standardize incoming JSON | Python + confluent-kafka |
-| **enricher**      | Add context (tiny CMDB tags)      | Python                   |
-| **feature-rules** | Derive features / alerts / store  | Python + DuckDB          |
-| **api**           | Query metrics & SSE alerts        | FastAPI + DuckDB         |
+| **enricher**      | Add context (tags, metadata)      | Python                   |
+| **feature-rules** | Apply rules + store in Postgres   | Python + psycopg2        |
+| **postgres**      | Local relational store (JSONB)    | PostgreSQL 16            |
+| **api**           | Query metrics + SSE alerts        | FastAPI + Postgres       |
 | **ui**            | Minimal web dashboard             | Nginx + Vanilla JS       |
 
 ---
 
 ## 🚀 Quick Start
 
-### 1️⃣  Clone & build
+### 1️⃣ Clone & launch
 
 ```bash
-git clone https://github.com/lILogit/MVP-EventOps-Framework.git
+git clone https://github.com/YOUR_USERNAME/eventops-flow.git
 cd eventops-flow
-make up
+docker compose up -d --build
 ```
 
-### 2️⃣  Initialize topics & seed example
+### 2️⃣ Confirm topics
 
 ```bash
-make init      # create topics
-make seed      # send example event
-make urls      # show API & UI endpoints
+docker exec -it $(docker ps -qf name=broker) \
+  rpk topic list --brokers=broker:9092
 ```
 
-### 3️⃣  Inspect running stack
+Expected:
 
-```bash
-docker compose ps
+```
+ingest.raw.agent
+signals.metric.v1
+ops.alert.v1
 ```
 
----
-
-## 🧪 Ingest Sample Events
-
-Send telemetry to the broker:
+### 3️⃣ Send sample telemetry
 
 ```bash
-# CPU warning
 kcat -b localhost:9092 -t ingest.raw.agent -P <<'EOF'
-{"tenant_id":"acme","host":"host-a","metric":"cpu_load","value":85,"ts_event":"2025-10-21T10:00:00Z","unit":"percent","tags":{"env":"prod"}}
-EOF
-
-# CPU critical
-kcat -b localhost:9092 -t ingest.raw.agent -P <<'EOF'
-{"tenant_id":"acme","host":"host-a","metric":"cpu_load","value":97,"ts_event":"2025-10-21T10:05:00Z","unit":"percent","tags":{"env":"prod"}}
+{"tenant_id":"acme","host":"host-a","metric":"cpu_load","value":92,
+ "ts_event":"2025-10-21T10:00:00Z","unit":"percent","tags":{"env":"prod"}}
 EOF
 ```
 
----
-
-## 🔍 Explore the Data
-
-**API**
+### 4️⃣ Query data
 
 ```bash
 curl "http://localhost:8088/metrics/cpu?tenant=acme&host=host-a"
 curl -N http://localhost:8088/alerts/stream
 ```
 
-**UI**
-
-```
-http://localhost:8080
-```
-
-**DuckDB (inside feature-rules container)**
+### 5️⃣ Inspect Postgres manually
 
 ```bash
-docker exec -it $(docker ps -qf name=feature-rules) \
-  duckdb /data/metrics.duckdb "SELECT * FROM metrics ORDER BY ts DESC LIMIT 5;"
+docker exec -it $(docker ps -qf name=postgres) \
+  psql -U eventops -d eventops -c \
+  "SELECT tenant, source_id, metric, value, ts FROM metrics ORDER BY ts DESC LIMIT 5;"
 ```
 
 ---
 
-## 🗃️ Local Store Layout
+## 🗃️ Local Store Schema (PostgreSQL)
 
-```
-/data/
-  metrics.duckdb
-  parquet/
-    tenant=acme/metric=cpu_load/date=2025-10-21/part-0001.parquet
+```sql
+CREATE TABLE metrics (
+  id SERIAL PRIMARY KEY,
+  ts TIMESTAMPTZ,
+  tenant TEXT,
+  source_id TEXT,
+  metric TEXT,
+  value DOUBLE PRECISION,
+  unit TEXT,
+  tags JSONB
+);
+CREATE TABLE alerts (
+  id SERIAL PRIMARY KEY,
+  ts TIMESTAMPTZ,
+  tenant TEXT,
+  source_id TEXT,
+  metric TEXT,
+  severity TEXT,
+  rule TEXT,
+  value DOUBLE PRECISION,
+  message TEXT,
+  tags JSONB
+);
 ```
 
 ---
@@ -157,52 +162,52 @@ docker exec -it $(docker ps -qf name=feature-rules) \
 ```
 eventops-flow/
 ├── docker-compose.yml
-├── Makefile
-├── build.sh
 ├── common/
-│   ├── kafka_io.py        # Kafka I/O helpers
-│   ├── duck.py            # DuckDB helpers
-│   └── sink.py            # Insert & parquet export
+│   ├── kafka_io.py        # Kafka I/O helpers + ensure_topics()
+│   ├── db_postgres.py     # Postgres connector + schema init
+│   └── sink.py            # Insert metrics + alerts
 ├── normalizer/
 ├── enricher/
 ├── feature-rules/
 ├── api/
 ├── ui/
 ├── scripts/
-│   ├── init_topics.sh
 │   └── seed_example.sh
-└── schemas/envelope.avsc
+└── README.md
 ```
 
 ---
 
-## ⚡ Why DuckDB + Parquet
+## ⚡ Why PostgreSQL (JSONB)
 
-* 🔌 No external DB required
-* ⚡ Vectorized query engine (super fast analytics)
-* 📂 Portable & human-readable storage
-* 🧠 Perfect for edge, PoC, or local analytics
+* 🧩 Concurrent read/write safe (ACID)
+* 💡 Schema-flexible (JSONB tags)
+* 🪶 Easy migration from DuckDB / Parquet
+* 🧠 Perfect for edge + PoC deployments
 
 ---
 
 ## 🧠 Extend & Customize
 
-| Extension            | How                                                          |
-| -------------------- | ------------------------------------------------------------ |
-| **More metrics**     | Add new metric types & thresholds in `feature-rules/main.py` |
-| **External DB**      | Swap `common/sink.py` to use ClickHouse / Postgres / Qdrant  |
-| **Automation**       | Hook alerts to n8n, Flink, or Temporal                       |
-| **Schema evolution** | Keep envelope schema versioned under `schemas/envelope.avsc` |
+| Extension              | How                                                |
+| ---------------------- | -------------------------------------------------- |
+| **More metrics**       | Edit `feature-rules/main.py` thresholds            |
+| **Extra topics**       | Add to `topics-init` command or `ensure_topics()`  |
+| **External analytics** | Mirror metrics to ClickHouse / Qdrant              |
+| **Automation**         | Trigger n8n / Flink / Temporal from `ops.alert.v1` |
+| **Schema evolution**   | Keep envelope schema under `schemas/envelope.avsc` |
 
 ---
 
 ## 🛡️ Troubleshooting
 
-| Symptom                                  | Fix                                                                               |
-| ---------------------------------------- | --------------------------------------------------------------------------------- |
-| `KafkaError{code=UNKNOWN_TOPIC_OR_PART}` | Run `make init` or the `scripts/init_topics.sh` script                            |
-| `COPY ../common not found`               | Ensure `build.context` is `.` in `docker-compose.yml`                             |
-| Schema registry 404                      | Use broker’s **embedded schema registry** (`--schema-registry-addr=0.0.0.0:8081`) |
+| Symptom                                        | Fix                                                    |                       |
+| ---------------------------------------------- | ------------------------------------------------------ | --------------------- |
+| `UNKNOWN_TOPIC_OR_PART`                        | Re-run `topics-init` or call `ensure_topics()` in code |                       |
+| `topics-init error: Bad for loop`              | Use POSIX `while` loop variant                         |                       |
+| `decoding failed: invalid command line string` | Use list-form YAML with `                              | -` block for commands |
+| `Could not set lock on file`                   | Old DuckDB residue — now fixed with Postgres           |                       |
+| `psycopg2 OperationalError`                    | Check Postgres container is healthy                    |                       |
 
 ---
 
@@ -220,4 +225,7 @@ MIT License — free to use, modify, and extend.
 
 ```
 
+---
 
+Would you like me to package this updated README directly into your existing repository ZIP (`eventops-flow-postgres.zip`) so you can push it to GitHub in one step?
+```
