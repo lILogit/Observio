@@ -1,5 +1,4 @@
 
----
 
 ````markdown
 # ⚙️ EventOps Flow — Local Store MVP (PostgreSQL Edition)
