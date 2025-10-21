@@ -8,7 +8,6 @@
 A minimal **event-driven observability pipeline** built with  
 🦄 **Redpanda**, 🐍 **Python micro-services**, and 🪶 **DuckDB + Parquet** for local persistence.
 
----
 
 ## 🧭 Overview
 
