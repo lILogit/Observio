@@ -1,5 +1,4 @@
 
----
 
 ````markdown
 # ⚙️ EventOps Flow — Local Store MVP
@@ -223,7 +222,4 @@ MIT License — free to use, modify, and extend.
 
 ```
 
----
 
-Would you like me to automatically include this updated `README.md` in your GitHub-ready ZIP (so the repo is immediately publishable)?
-```
