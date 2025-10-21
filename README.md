@@ -239,6 +239,3 @@ MIT License — free for use, modification, and extension.
 > Build once, extend infinitely.
 > **EventOps Flow** turns streams into structure, structure into insight, and insight into automated action.
 
----
-
-Would you like me to generate the **companion folder structure** (with `Dockerfile`, `requirements.txt`, and entrypoint for each microservice) so this README can serve as a push-ready starter repo?
