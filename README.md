@@ -221,7 +221,3 @@ MIT License — free to use, modify, and extend.
 
 ```
 
----
-
-Would you like me to package this updated README directly into your existing repository ZIP (`eventops-flow-postgres.zip`) so you can push it to GitHub in one step?
-```
