@@ -182,7 +182,7 @@ volumes:
 ```bash
 # 1️⃣  Clone and launch
 git clone git@github.com:lILogit/MVP-EventOps-Framework.git
-cd eventops-flow
+cd MVP-EventOps-Framework/eventops-flow
 docker compose up -d
 
 # 2️⃣  Simulate agent metric
