@@ -181,7 +181,7 @@ volumes:
 
 ```bash
 # 1️⃣  Clone and launch
-git clone https://github.com/lILogit/eventops-flow.git
+git clone git@github.com:lILogit/MVP-EventOps-Framework.git
 cd eventops-flow
 docker compose up -d
 
