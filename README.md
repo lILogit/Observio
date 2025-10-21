@@ -181,7 +181,7 @@ volumes:
 
 ```bash
 # 1️⃣  Clone and launch
-git clone https://github.com/<yourname>/eventops-flow.git
+git clone https://github.com/lILogit/eventops-flow.git
 cd eventops-flow
 docker compose up -d
 
