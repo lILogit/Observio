@@ -1,5 +1,6 @@
 version: "3.9"
 
+services:
   broker:
     image: redpandadata/redpanda:latest
     command:
@@ -35,12 +36,12 @@ version: "3.9"
         condition: service_healthy
     entrypoint: ["/bin/sh","-lc"]
     command: >
-      'for i in $(seq 1 30); do
-         rpk cluster info --brokers=broker:9092 && break || sleep 2;
-       done;
-       rpk topic create ingest.raw.agent signals.metric.v1 ops.alert.v1 --brokers=broker:9092 || true;
-       rpk topic alter-config ops.alert.v1 --set cleanup.policy=compact,delete --brokers=broker:9092 || true;
-       echo "Topics ready"; sleep 1'
+      for i in $(seq 1 30); do
+        rpk cluster info --brokers=broker:9092 && break || sleep 2;
+      done;
+      rpk topic create ingest.raw.agent signals.metric.v1 ops.alert.v1 --brokers=broker:9092 || true;
+      rpk topic alter-config ops.alert.v1 --set cleanup.policy=compact,delete --brokers=broker:9092 || true;
+      echo "Topics ready"
 
   postgres:
     image: postgres:16
@@ -50,7 +51,13 @@ version: "3.9"
       POSTGRES_PASSWORD: secret
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports: ["5432:5432"]
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventops -d eventops || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   normalizer:
     build:
@@ -103,7 +110,7 @@ version: "3.9"
       topics-init:
         condition: service_started
       postgres:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - data:/data
 
@@ -121,14 +128,15 @@ version: "3.9"
       PG_PASS: secret
       HOST: 0.0.0.0
       PORT: 8088
-    ports: ["8088:8088"]
+    ports:
+      - "8088:8088"
     depends_on:
       broker:
         condition: service_healthy
       topics-init:
         condition: service_started
       postgres:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - data:/data
 
@@ -136,11 +144,11 @@ version: "3.9"
     build:
       context: .
       dockerfile: ui/Dockerfile
-    ports: ["8080:80"]
+    ports:
+      - "8080:80"
     depends_on:
       - api
 
 volumes:
   data:
   pgdata:
-
