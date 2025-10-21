@@ -1,22 +1,25 @@
 
-# ⚙️ MVP (Minimum Value Product) - EventOps Flow Demo
+````markdown
+# ⚙️ EventOps Flow — Local Store MVP
 
-**Collect → Normalize → Enrich → Store → Automate → Process → Serve**
+> **Collect → Normalize → Enrich → Store → Automate → Serve**
 
-> A minimal, event-driven pipeline turning raw telemetry into intelligent actions —
-> no external database, just lightweight local storage powered by **DuckDB + Parquet**.
+A minimal **event-driven observability pipeline** built with  
+🦄 **Redpanda**, 🐍 **Python micro-services**, and 🪶 **DuckDB + Parquet** for local persistence.
 
 ---
 
 ## 🧭 Overview
 
-**EventOps Flow** is a modular **EventOps / DataOps** framework that connects data ingestion, normalization, enrichment, and automation into a single developer-friendly pipeline.
+**EventOps Flow** demonstrates how to transform raw telemetry into intelligent actions using lightweight, modular services.
 
-This **Local Store Edition** for fast analytics and zero-config persistence — ideal for prototyping, local testing, or edge deployments.
+- **Local-store edition:** zero external DB, instant analytics via DuckDB  
+- **Ideal for:** demos, edge nodes, developer laptops, or PoC pipelines  
+- **Architecture:** loosely coupled Python micro-services connected by a Redpanda event bus
 
 ---
 
-## 📊 Architecture at a Glance
+## 🧩 Architecture at a Glance
 
 ```mermaid
 flowchart LR
@@ -25,8 +28,8 @@ flowchart LR
   end
 
   subgraph Core["Event Core"]
-    Bus[(Broker)]
-    Reg[(Schema Registry)]
+    Bus[(Redpanda Broker)]
+    Reg[(Schema Registry built-in)]
     Reg --> Bus
   end
 
@@ -37,12 +40,12 @@ flowchart LR
   end
 
   subgraph Storage
-    LS[(Local database)]
+    LS[(DuckDB + Parquet)]
   end
 
-  subgraph Serve["Serve & UI"]
-    API[API Gateway]
-    UI[UI / Grafana-lite]
+  subgraph Serve["Serve / UI"]
+    API[FastAPI + SSE]
+    UI[Grafana-lite / HTML]
   end
 
   Agent --> Bus
@@ -54,114 +57,87 @@ flowchart LR
   API --> Bus
   Bus --> UI
   UI --> API
+````
+
+---
+
+## 📦 Components
+
+| Service           | Purpose                           | Stack / Tech             |
+| ----------------- | --------------------------------- | ------------------------ |
+| **broker**        | Event transport + schema registry | 🦄 Redpanda (latest)     |
+| **normalizer**    | Clean & standardize incoming JSON | Python + confluent-kafka |
+| **enricher**      | Add context (tiny CMDB tags)      | Python                   |
+| **feature-rules** | Derive features / alerts / store  | Python + DuckDB          |
+| **api**           | Query metrics & SSE alerts        | FastAPI + DuckDB         |
+| **ui**            | Minimal web dashboard             | Nginx + Vanilla JS       |
+
+---
+
+## 🚀 Quick Start
+
+### 1️⃣  Clone & build
+
+```bash
+git clone https://github.com/YOUR_USERNAME/eventops-flow.git
+cd eventops-flow
+make up
+```
+
+### 2️⃣  Initialize topics & seed example
+
+```bash
+make init      # create topics
+make seed      # send example event
+make urls      # show API & UI endpoints
+```
+
+### 3️⃣  Inspect running stack
+
+```bash
+docker compose ps
 ```
 
 ---
 
-## 🧩 Core Components
+## 🧪 Ingest Sample Events
 
-| Service             | Purpose                     | Technology               |
-| ------------------- | --------------------------- | ------------------------ |
-| **broker**          | Event transport             | Redpanda / Kafka         |
-| **schema-registry** | Schema validation           | Redpanda Registry        |
-| **normalizer**      | Cleans & standardizes input | Python + confluent-kafka |
-| **enricher**        | Adds context (CMDB, tags)   | Python                   |
-| **feature-rules**   | Generates alerts            | Python                   |
-| **local store**     | File-based analytics        | DuckDB + Parquet         |
-| **api**             | Query + SSE alerts          | FastAPI + DuckDB         |
-| **ui**              | Minimal web or Grafana view | HTML / JS                |
+Send telemetry to the broker:
 
----
+```bash
+# CPU warning
+kcat -b localhost:9092 -t ingest.raw.agent -P <<'EOF'
+{"tenant_id":"acme","host":"host-a","metric":"cpu_load","value":85,"ts_event":"2025-10-21T10:00:00Z","unit":"percent","tags":{"env":"prod"}}
+EOF
 
-## 🧱 Topics and Schemas
-
-| Topic               | Purpose             | Retention | Notes         |
-| ------------------- | ------------------- | --------- | ------------- |
-| `ingest.raw.agent`  | Raw agent telemetry | 3 d       | Input         |
-| `signals.metric.v1` | Normalized metrics  | 14 d      | No compaction |
-| `ops.alert.v1`      | Rule-based alerts   | 30 d      | Compaction on |
-
-**Envelope Schema (`monitoring.envelope.v1`):**
-
-```json
-{
-  "type": "record",
-  "name": "Envelope",
-  "namespace": "monitoring.v1",
-  "fields": [
-    {"name":"event_id","type":"string"},
-    {"name":"ts_event","type":"string"},
-    {"name":"ts_ingest","type":"string"},
-    {"name":"tenant_id","type":"string"},
-    {"name":"source","type":{
-      "type":"record","name":"Source",
-      "fields":[{"name":"type","type":"string"},{"name":"source_id","type":"string"}]
-    }},
-    {"name":"schema_name","type":"string"},
-    {"name":"schema_version","type":"int"},
-    {"name":"attributes","type":{"type":"map","values":"string"}},
-    {"name":"tags","type":{"type":"map","values":"string"}}
-  ]
-}
+# CPU critical
+kcat -b localhost:9092 -t ingest.raw.agent -P <<'EOF'
+{"tenant_id":"acme","host":"host-a","metric":"cpu_load","value":97,"ts_event":"2025-10-21T10:05:00Z","unit":"percent","tags":{"env":"prod"}}
+EOF
 ```
 
 ---
 
-## 🐳 Docker Compose (MVP Core)
+## 🔍 Explore the Data
 
-```yaml
-version: "3.9"
-services:
-  broker:
-    image: redpandadata/redpanda:latest
-    command: ["redpanda","start","--overprovisioned","--smp","1","--memory","1G",
-              "--reserve-memory","0M","--node-id","0",
-              "--kafka-addr","0.0.0.0:9092","--advertise-kafka-addr","broker:9092",
-              "--rpc-addr","0.0.0.0:33145","--advertise-rpc-addr","broker:33145",
-              "--pandaproxy-addr","0.0.0.0:8082","--advertise-pandaproxy-addr","broker:8082"]
-    ports: ["9092:9092","9644:9644","8081:8081","8082:8082"]
+**API**
 
-  schema-registry:
-    image: docker.redpanda.com/vectorized/redpanda-schema-registry:latest
-    environment:
-      SCHEMA_REGISTRY_KAFKA_BROKERS: broker:9092
-    ports: ["8081:8081"]
+```bash
+curl "http://localhost:8088/metrics/cpu?tenant=acme&host=host-a"
+curl -N http://localhost:8088/alerts/stream
+```
 
-  normalizer:
-    build: ./normalizer
-    environment: { BROKERS: broker:9092, SCHEMA_URL: http://schema-registry:8081 }
-    depends_on: [broker, schema-registry]
-    volumes: ["data:/data"]
+**UI**
 
-  enricher:
-    build: ./enricher
-    environment: { BROKERS: broker:9092 }
-    depends_on: [broker]
-    volumes: ["data:/data"]
+```
+http://localhost:8080
+```
 
-  feature-rules:
-    build: ./feature-rules
-    environment: { BROKERS: broker:9092 }
-    depends_on: [broker]
-    volumes: ["data:/data"]
+**DuckDB (inside feature-rules container)**
 
-  api:
-    build: ./api
-    environment:
-      BROKERS: broker:9092
-      DATA_DIR: /data
-      DUCKDB_PATH: /data/metrics.duckdb
-    ports: ["8088:8088"]
-    depends_on: [broker]
-    volumes: ["data:/data"]
-
-  ui:
-    build: ./ui
-    ports: ["8080:80"]
-    depends_on: [api]
-
-volumes:
-  data:
+```bash
+docker exec -it $(docker ps -qf name=feature-rules) \
+  duckdb /data/metrics.duckdb "SELECT * FROM metrics ORDER BY ts DESC LIMIT 5;"
 ```
 
 ---
@@ -172,82 +148,68 @@ volumes:
 /data/
   metrics.duckdb
   parquet/
-    tenant=acme/metric=cpu_load/date=2025-10-16/part-0001.parquet
+    tenant=acme/metric=cpu_load/date=2025-10-21/part-0001.parquet
 ```
 
 ---
 
-## 🧪 Quick Start
-
-```bash
-# 1️⃣  Clone and launch
-git clone git@github.com:lILogit/MVP-EventOps-Framework.git
-cd MVP-EventOps-Framework/eventops-flow
-docker compose up -d
-
-# 2️⃣  Simulate agent metric
-kcat -b localhost:9092 -t ingest.raw.agent -P <<EOF
-{"tenant_id":"acme","host":"host-a","metric":"cpu_load","value":92,
- "ts_event":"2025-10-16T09:00:00Z","unit":"percent","tags":{"env":"prod"}}
-EOF
-
-# 3️⃣  Query metrics
-curl "http://localhost:8088/metrics/cpu?tenant=acme&host=host-a"
-
-# 4️⃣  Watch live alerts
-curl -N http://localhost:8088/alerts/stream
-```
-
----
-
-## 🧰 Inspect Local Data
-
-```bash
-# open DuckDB shell
-duckdb data/metrics.duckdb "SELECT COUNT(*) FROM metrics;"
-# export sample
-duckdb data/metrics.duckdb "COPY (SELECT * FROM metrics LIMIT 100) TO 'sample.parquet' (FORMAT PARQUET);"
-```
-
----
-
-## 🔄 Extend / Migrate
-
-* Add new topics (`signals.log.v1`, `signals.trace.v1`)
-* Swap local sink for ClickHouse, PostgreSQL, or Qdrant later
-* Keep envelope schema intact for contract-first evolution
-* Plug in n8n / Flink / Temporal for richer automation
-
----
-
-## 📦 Repository Layout
+## 🧰 Repository Layout
 
 ```
 eventops-flow/
+├── docker-compose.yml
+├── Makefile
+├── build.sh
+├── common/
+│   ├── kafka_io.py        # Kafka I/O helpers
+│   ├── duck.py            # DuckDB helpers
+│   └── sink.py            # Insert & parquet export
 ├── normalizer/
 ├── enricher/
 ├── feature-rules/
-│   └── local_sink.py
 ├── api/
 ├── ui/
-├── docker-compose.yml
-└── README.md
+├── scripts/
+│   ├── init_topics.sh
+│   └── seed_example.sh
+└── schemas/envelope.avsc
 ```
 
 ---
 
-## ✅ Why Local Store
+## ⚡ Why DuckDB + Parquet
 
-* 🧩 Zero external dependencies
-* ⚡ Fast analytical queries (vectorized engine)
-* 📂 Portable & human-readable files
-* 🔒 Perfect for laptops, edge nodes, or demos
+* 🔌 No external DB required
+* ⚡ Vectorized query engine (super fast analytics)
+* 📂 Portable & human-readable storage
+* 🧠 Perfect for edge, PoC, or local analytics
+
+---
+
+## 🧠 Extend & Customize
+
+| Extension            | How                                                          |
+| -------------------- | ------------------------------------------------------------ |
+| **More metrics**     | Add new metric types & thresholds in `feature-rules/main.py` |
+| **External DB**      | Swap `common/sink.py` to use ClickHouse / Postgres / Qdrant  |
+| **Automation**       | Hook alerts to n8n, Flink, or Temporal                       |
+| **Schema evolution** | Keep envelope schema versioned under `schemas/envelope.avsc` |
+
+---
+
+## 🛡️ Troubleshooting
+
+| Symptom                                  | Fix                                                                               |
+| ---------------------------------------- | --------------------------------------------------------------------------------- |
+| `KafkaError{code=UNKNOWN_TOPIC_OR_PART}` | Run `make init` or the `scripts/init_topics.sh` script                            |
+| `COPY ../common not found`               | Ensure `build.context` is `.` in `docker-compose.yml`                             |
+| Schema registry 404                      | Use broker’s **embedded schema registry** (`--schema-registry-addr=0.0.0.0:8081`) |
 
 ---
 
 ## 📜 License
 
-MIT License — Free for use, modification, and extension.
+MIT License — free to use, modify, and extend.
 
 ---
 
@@ -255,4 +217,10 @@ MIT License — Free for use, modification, and extension.
 
 > **EventOps Flow** bridges raw data and intelligent automation.
 > From lightweight local demos to enterprise data fabrics,
-> the same pattern scales — **one envelope, one event bus, infinite possibilities.**
+> the same pattern scales — **one envelope, one bus, infinite possibilities.**
+
+```
+
+
+Would you like me to automatically include this updated `README.md` in your GitHub-ready ZIP (so the repo is immediately publishable)?
+```
