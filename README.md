@@ -12,7 +12,7 @@
 
 **EventOps Flow** is a modular **EventOps / DataOps** framework that connects data ingestion, normalization, enrichment, and automation into a single developer-friendly pipeline.
 
-This **Local Store Edition** replaces remote DBs with **DuckDB + Parquet** files for fast analytics and zero-config persistence — ideal for prototyping, local testing, or edge deployments.
+This **Local Store Edition** for fast analytics and zero-config persistence — ideal for prototyping, local testing, or edge deployments.
 
 ---
 
