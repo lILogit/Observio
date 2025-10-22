@@ -218,13 +218,28 @@ MIT License — free to use, modify, and extend.
 > From lightweight local demos to enterprise data fabrics,
 > the same pattern scales — **one envelope, one bus, infinite possibilities.**
 
+```mermaid
+flowchart TB
+  subgraph Traditional["Traditional Monitoring Flow"]
+    A["System Issue"] --> B["Alert Fires"]
+    B --> C["Human Investigates"]
+    C --> D["Manual Fix"]
+    D --> E["Post-Mortem"]
+    E -->|"⏱️ Hours to Days"| F["Outcome"]
+  end
 
-Traditional Monitoring Flow:
-System Issue → Alert Fires → Human Investigates → Manual Fix → Post-Mortem
-     ⏱️ Hours to Days
+  subgraph SignalForge["Signal-Forge Flow"]
+    A2["System Anomaly"] --> B2["AI Detects"]
+    B2 --> C2["AI Diagnoses"]
+    C2 --> D2["Automated Action"]
+    D2 --> E2["Prevention"]
+    E2 -->|"⚡ Seconds to Minutes"| F2["Outcome"]
+  end
 
-Signal-Forge Flow:
-System Anomaly → AI Detects → AI Diagnoses → Automated Action → Prevention
-     ⚡ Seconds to Minutes
+  classDef traditional fill:#ffe5e5,stroke:#ff5c5c,stroke-width:2px,color:#000;
+  classDef signal fill:#e5ffe5,stroke:#4caf50,stroke-width:2px,color:#000;
+
+  class A,B,C,D,E,F
+```
 
 
