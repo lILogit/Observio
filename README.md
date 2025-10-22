@@ -1,6 +1,6 @@
 
 
-# ⚙️ EventOps MVP framework
+# ⚙️ Signal-Forge MVP framework
 
 > **Collect → Normalize → Enrich → Store → Automate → Serve**
 
