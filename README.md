@@ -284,30 +284,6 @@ MIT License — free to use, modify, and extend.
 
 ---
 
-## Cost Comparison
 
-| **Cost Factor** | **Traditional** | **Signal-Forge** | **Savings** |
-|-----------------|-----------------|------------------|-------------|
-| License fees | $100K-$500K/year | Open core + premium | 60-80% |
-| Engineering time | 40hrs/week on monitoring | 5hrs/week | 87.5% |
-| Downtime costs | $100K-$1M/incident | Prevented | 90%+ |
-| Training costs | $50K/year | $10K/year | 80% |
-| Infrastructure | Heavy (10-20% overhead) | Lightweight (1-3%) | 70-85% |
-
----
-
-## Technology Stack Comparison
-
-| **Component** | **Traditional Stack** | **Signal-Forge Stack** |
-|---------------|----------------------|------------------------|
-| **Logs** | Splunk, ELK | Unified platform + Vector DB |
-| **Metrics** | Datadog, New Relic | Prometheus + AI analytics |
-| **Traces** | Jaeger, Zipkin | OpenTelemetry + Graph DB |
-| **APM** | AppDynamics | Integrated observability |
-| **Alerting** | PagerDuty + manual rules | AI-driven context engine |
-| **ML/AI** | ❌ Not included | ✅ Built-in LLMs & agents |
-| **Automation** | External tools (Ansible) | ✅ Native AI agents |
-
-Legend: ✅ Full support | ⚠️ Partial/Limited | ❌ Not available
 
 
