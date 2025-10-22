@@ -78,7 +78,7 @@ flowchart LR
 ### 1️⃣ Clone & launch
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/eventops-flow.git
+git clone https://github.com/lILogit/MVP-EventOps-Framework.git
 cd eventops-flow
 docker compose up -d --build
 ```
