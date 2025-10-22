@@ -218,5 +218,8 @@ MIT License — free to use, modify, and extend.
 > From lightweight local demos to enterprise data fabrics,
 > the same pattern scales — **one envelope, one bus, infinite possibilities.**
 
-```
+
+Key Differentiators
+Traditional MonitoringSignal-ForgeReactive dashboardsProactive intelligenceRule-based alertsAI-driven anomaly detectionManual investigationAutomated root cause analysisSeparate tools (logs/metrics/traces)Unified observability fabricAlert fatigueContext-aware notificationsVendor lock-inOpen, modular architecturePost-mortem analysisReal-time prevention
+
 
