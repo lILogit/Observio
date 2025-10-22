@@ -27,7 +27,7 @@ flowchart LR
   end
 
   subgraph Core["Core EMB"]
-    Bus[(Redpanda Broker + Schema Registry)]
+    Bus[( Native Kafka Broker + Schema Registry)]
   end
 
   subgraph Stream["Stream Apps"]
