@@ -26,18 +26,18 @@ flowchart LR
     Agent["Events"]
   end
 
-  subgraph Core["Event Core"]
+  subgraph Core["Event Message Bus Core"]
     Bus[(Redpanda Broker + Schema Registry)]
   end
 
   subgraph Stream["Stream Apps"]
     Norm[Normalizer]
     Enr[Enricher]
-    Feat[Feature + Rules]
+    Feat[Feature + Rules + AI/MLOps]
   end
 
   subgraph Storage
-    PG[(PostgreSQL JSONB Store)]
+    PG[(PostgreSQL)]
   end
 
   subgraph Serve["Serve / UI"]
