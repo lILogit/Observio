@@ -219,7 +219,12 @@ MIT License — free to use, modify, and extend.
 > the same pattern scales — **one envelope, one bus, infinite possibilities.**
 
 
-Key Differentiators
-Traditional MonitoringSignal-ForgeReactive dashboardsProactive intelligenceRule-based alertsAI-driven anomaly detectionManual investigationAutomated root cause analysisSeparate tools (logs/metrics/traces)Unified observability fabricAlert fatigueContext-aware notificationsVendor lock-inOpen, modular architecturePost-mortem analysisReal-time prevention
+Traditional Monitoring Flow:
+System Issue → Alert Fires → Human Investigates → Manual Fix → Post-Mortem
+     ⏱️ Hours to Days
+
+Signal-Forge Flow:
+System Anomaly → AI Detects → AI Diagnoses → Automated Action → Prevention
+     ⚡ Seconds to Minutes
 
 
