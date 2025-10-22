@@ -26,7 +26,7 @@ flowchart LR
     Agent["Events"]
   end
 
-  subgraph Core["Event Message Bus Core"]
+  subgraph Core["Core EMB"]
     Bus[(Redpanda Broker + Schema Registry)]
   end
 
@@ -101,9 +101,8 @@ ops.alert.v1
 ### 3️⃣ Send sample telemetry
 
 ```bash
-kcat -b localhost:9092 -t ingest.raw.agent -P <<'EOF'
-{"tenant_id":"acme","host":"host-a","metric":"cpu_load","value":92,
- "ts_event":"2025-10-21T10:00:00Z","unit":"percent","tags":{"env":"prod"}}
+docker compose exec -T broker kcat -b broker:9092 -t ingest.raw.agent -P <<'EOF'
+{"tenant_id":"acme","host":"host-a","metric":"cpu_load","value":92,"ts_event":"2025-10-21T10:00:00Z","unit":"percent","tags":{"env":"prod"}}
 EOF
 ```
 
