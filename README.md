@@ -1,6 +1,6 @@
 
 
-# ⚙️ EventOps MVP framework
+# ⚙️ Watchpoint MVP framework
 
 > **Collect → Normalize → Enrich → Store → Automate → Serve**
 
