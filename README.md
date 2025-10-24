@@ -42,7 +42,7 @@ flowchart LR
 
   subgraph Serve["Serve / UI"]
     API[FastAPI + SSE]
-    UI[Grafana-lite / HTML]
+    UI[Grafana-lite + AI agent / HTML]
   end
 
   Agent --> Bus
