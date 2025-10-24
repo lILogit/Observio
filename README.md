@@ -1,6 +1,6 @@
 
 
-# ⚙️ Signal-Forge MVP framework
+# ⚙️ Event-Driven Observability with OpenTelemetry -  MVP 
 
 > **Collect → Normalize → Enrich → Store → Automate → Serve**
 
