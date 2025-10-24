@@ -1,6 +1,6 @@
 
 
-# ⚙️ Event-Driven Observability with OpenTelemetry -  MVP 
+# ⚙️ Event-Driven Observability -  Minimum Viable Product 
 
 > **Collect → Normalize → Enrich → Store → Automate → Serve**
 
