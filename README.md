@@ -22,29 +22,37 @@ and 🐘 **PostgreSQL (JSONB storage)** for concurrent local persistence.
 
 ```mermaid
 flowchart LR
-  subgraph Ingest
-    Agent["Events"]
+  %% ==== STYLE DEFINITIONS ====
+  classDef layer fill:#0e1117,stroke:#333,stroke-width:1px,color:#fff,font-weight:bold
+  classDef service fill:#1e293b,stroke:#334155,stroke-width:1px,color:#f8fafc,rx:10,ry:10
+  classDef datastore fill:#083344,stroke:#155e75,stroke-width:1px,color:#a5f3fc,rx:8,ry:8
+  classDef connector stroke-dasharray: 5 5,stroke:#64748b,stroke-width:1.5px
+  
+  %% ==== LAYOUT ====
+  subgraph Ingest["🛰️ Ingest"]
+    Agent["📡 Events / Agents"]:::service
+  end
+  
+  subgraph Core["🧩 Event Core"]
+    Bus["🌀 Kafka Broker + Schema Registry"]:::service
+  end
+  
+  subgraph Stream["⚙️ Stream Processing"]
+    Norm["🔧 Normalizer"]:::service
+    Enr["🧠 Enricher"]:::service
+    Feat["🤖 Features + Rules + AI / MLOps"]:::service
+  end
+  
+  subgraph Storage["💾 Data Storage"]
+    PG["🐘 PostgreSQL"]:::datastore
+  end
+  
+  subgraph Serve["🖥️ Serve / UI"]
+    API["⚡ FastAPI + SSE Gateway"]:::service
+    UI["📊 Grafana-lite + AI Agent / HTML"]:::service
   end
 
-  subgraph Core["Core EMB"]
-    Bus[( Native Kafka Broker + Schema Registry)]
-  end
-
-  subgraph Stream["Stream Apps"]
-    Norm[Normalizer]
-    Enr[Enricher]
-    Feat[Feature + Rules + AI/MLOps]
-  end
-
-  subgraph Storage
-    PG[(PostgreSQL)]
-  end
-
-  subgraph Serve["Serve / UI"]
-    API[FastAPI + SSE]
-    UI[Grafana-lite + AI agent / HTML]
-  end
-
+  %% ==== FLOW CONNECTIONS ====
   Agent --> Bus
   Bus --> Norm --> Bus
   Bus --> Enr --> Bus
@@ -54,6 +62,7 @@ flowchart LR
   API --> Bus
   Bus --> UI
   UI --> API
+
 ````
 
 ---
