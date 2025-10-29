@@ -11,7 +11,7 @@ and 🐘 **PostgreSQL (JSONB storage)** for concurrent local persistence.
 
 ## 🧭 Overview
 
-**EventOps Flow** demonstrates how to transform raw telemetry into intelligent actions using lightweight, modular services.
+**Observio** demonstrates how to transform raw telemetry into intelligent actions using lightweight, modular services.
 
 - **PostgreSQL edition:** full ACID DB with concurrent readers/writers  
 - **Ideal for:** demos, edge nodes, developer laptops, or PoC pipelines  
@@ -71,7 +71,7 @@ flowchart LR
 
 | Service           | Purpose                           | Stack / Tech             |
 | ----------------- | --------------------------------- | ------------------------ |
-| **broker**        | Event transport + schema registry | 🦄 Redpanda (latest)     |
+| **broker**        | Event transport + schema registry | 🦄 Redpanda / KAFKA (latest)     |
 | **topics-init**   | Pre-creates Kafka topics          | Redpanda CLI (`rpk`)     |
 | **normalizer**    | Clean & standardize incoming JSON | Python + confluent-kafka |
 | **enricher**      | Add context (tags, metadata)      | Python                   |
@@ -215,21 +215,15 @@ eventops-flow/
 
 ---
 
-## 📜 License
-
-MIT License — free to use, modify, and extend.
-
----
-
 ## ✨ Vision
 
-> **EventOps Flow** bridges raw data and intelligent automation.
+> **Observio** bridges raw data and intelligent automation.
 > From lightweight local demos to enterprise data fabrics,
 > the same pattern scales — **one envelope, one bus, infinite possibilities.**
 
 # Key Differentiators
 
-| **Aspect** | **Traditional Monitoring** | **Signal-Forge** |
+| **Aspect** | **Traditional Monitoring** | **Observio** |
 |------------|---------------------------|------------------|
 | **Approach** | Reactive dashboards | Proactive intelligence |
 | **Detection** | Rule-based alerts | AI-driven anomaly detection |
@@ -243,7 +237,7 @@ MIT License — free to use, modify, and extend.
 
 ## Extended Comparison Table
 
-| **Feature** | **Traditional Monitoring** | **Signal-Forge** | **Impact** |
+| **Feature** | **Traditional Monitoring** | **Observio** | **Impact** |
 |-------------|---------------------------|------------------|------------|
 | **Observability Model** | Reactive dashboards | Proactive intelligence | 🔥 Prevent issues before they occur |
 | **Alert Mechanism** | Rule-based alerts (static thresholds) | AI-driven anomaly detection | 🎯 95% reduction in false positives |
@@ -260,7 +254,7 @@ MIT License — free to use, modify, and extend.
 
 ## Detailed Feature Comparison
 
-| **Category** | **Feature** | **Traditional** | **Signal-Forge** |
+| **Category** | **Feature** | **Traditional** | **Observio** |
 |--------------|-------------|-----------------|------------------|
 | **Detection** | Anomaly Detection | ❌ Rule-based only | ✅ ML-powered, adaptive |
 | | Threshold Management | ⚠️ Manual configuration | ✅ Auto-learning baselines |
@@ -282,7 +276,7 @@ MIT License — free to use, modify, and extend.
 
 ## Time-to-Value Comparison
 
-| **Task** | **Traditional Time** | **Signal-Forge Time** | **Improvement** |
+| **Task** | **Traditional Time** | *Observio Time** | **Improvement** |
 |----------|---------------------|----------------------|-----------------|
 | Detect anomaly | 15-60 minutes | 5-30 seconds | **99% faster** |
 | Identify root cause | 2-8 hours | 1-5 minutes | **96% faster** |
