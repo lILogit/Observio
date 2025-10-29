@@ -5,7 +5,7 @@
 > **Collect → Normalize → Enrich → Store → Automate → Serve**
 
 A minimal **event-driven observability pipeline** built with  
-🦄 **Redpanda (broker + schema registry)**, 🐍 **Python micro-services**,  
+🦄 **Redpanda (KAFKA broker + schema registry)**, 🐍 **Python micro-services**,  
 and 🐘 **PostgreSQL (JSONB storage)** for concurrent local persistence.
 
 
