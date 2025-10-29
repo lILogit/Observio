@@ -40,7 +40,7 @@ flowchart LR
   subgraph Stream["⚙️ Stream Processing"]
     Norm["🔧 Normalizer"]:::service
     Enr["🧠 Enricher"]:::service
-    Feat["🤖 Features + Rules + AI / MLOps"]:::service
+    Feat["🤖 Features + Rules + AI/ML pipeline"]:::service
   end
   
   subgraph Storage["💾 Data Storage"]
